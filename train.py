@@ -12,8 +12,8 @@ env_name = "rte_case5_example"  # or any other name.
 env = grid2op.make(env_name, test=True, action_class=TopologyChangeAction)
 
 
-agent = KANPPOAgent(n_actions=132, input_dims=182)
+agent = PPOAgent(n_actions=132, input_dims=182)
 trainer = PPOTrainer(agent=agent, env=env, N=20, n_epochs=50, n_games=100)
 
-trainer.train("result\\ppo-kan.png")
+trainer.train("result\\ppo.png")
 #agentt.save_model("models")
