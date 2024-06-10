@@ -47,14 +47,13 @@ class PPOMemory:
 
 class KANActorNetwork(nn.Module):
     def __init__(self, n_actions, input_dims, alpha,
-            fc1_dims=16, fc2_dims=32, chkpt_dir='models'):
+            fc1_dims=256, fc2_dims=512, chkpt_dir='models'):
         super(KANActorNetwork, self).__init__()
 
         self.checkpoint_file = os.path.join(chkpt_dir, 'kan_actor_ppo')
         self.actor = nn.Sequential(
             KANLayer([input_dims, fc1_dims, fc2_dims]),
-            KANLayer([fc2_dims, fc1_dims, 8]),
-            KANLayer([8, 8, n_actions]),
+            KANLayer([fc2_dims, fc1_dims, n_actions]),
             nn.Softmax(dim=-1)
                 )
 
@@ -78,15 +77,15 @@ class KANActorNetwork(nn.Module):
 
 
 class KANCriticNetwork(nn.Module):
-    def __init__(self, input_dims, alpha, fc1_dims=16, fc2_dims=32,
+    def __init__(self, input_dims, alpha, fc1_dims=256, fc2_dims=512,
             chkpt_dir='models'):
         super(KANCriticNetwork, self).__init__()
 
         self.checkpoint_file = os.path.join(chkpt_dir, 'kan_critic_torch_ppo')
         self.critic = nn.Sequential(
                 KANLayer([input_dims, fc1_dims, fc2_dims]),
-                KANLayer([fc2_dims, fc1_dims, 8]),
-                KANLayer([8, 8, 1]),
+                KANLayer([fc2_dims, fc1_dims, input_dims]),
+                KANLayer([input_dims, 8, 1]),
         )
 
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)
@@ -234,7 +233,7 @@ class ActorNetwork(nn.Module):
 
 
 class CriticNetwork(nn.Module):
-    def __init__(self, input_dims, alpha, fc1_dims=16, fc2_dims=32,
+    def __init__(self, input_dims, alpha, fc1_dims=256, fc2_dims=512,
             chkpt_dir='models'):
         super(CriticNetwork, self).__init__()
 
@@ -244,7 +243,9 @@ class CriticNetwork(nn.Module):
                 nn.ReLU(),
                 nn.Linear(fc1_dims, fc2_dims),
                 nn.ReLU(),
-                nn.Linear(fc2_dims, 1)
+                nn.Linear(fc2_dims, fc1_dims),
+                nn.ReLU(),
+                nn.Linear(fc1_dims, 1)
         )
 
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)

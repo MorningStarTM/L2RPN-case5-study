@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import itertools
 
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
@@ -71,3 +72,5 @@ def plotLearning(x, scores, epsilons, filename, lines=None):
 
     plt.savefig(filename)
     plt.show()
+
+

@@ -1,10 +1,11 @@
 from .utils import plot_learning, plot_learning_curve, plotLearning
-import GPUtil
 import matplotlib.pyplot as plt
 import time
 import numpy as np
 from .csv_logger import CSVLogger
 from collections import deque
+import grid2op
+from .converter import Converter
 
 
 import os
@@ -31,23 +32,12 @@ class Trainer:
         self.total_duration = 0
         
 
-    def monitor_resources(self):
-        """
-        Monitor and log the RAM and GPU usage.
-        """
-        # GPU usage
-        gpus = GPUtil.getGPUs()
-        if gpus:
-            gpu_usage = max(gpu.memoryUtil * 100 for gpu in gpus)  # Get max GPU usage in percentage
-        else:
-            gpu_usage = 0
-        self.gpu_usage = np.append(self.gpu_usage, gpu_usage)  # Append GPU usage to the array
-
+    
     def train(self):
         total_start_time = time.time()
 
         for i in range(self.epochs):
-            self.monitor_resources()  # Monitor resources at the beginning of each episode
+
             episode_start_time = time.time()
 
             done = False
@@ -96,6 +86,7 @@ class PPOTrainer:
         self.learn_iters = 0
         self.avg_score = 0
         self.n_steps = 0
+        self.converter = Converter(self.env)
         
 
     def train(self, figure_file):
@@ -103,15 +94,15 @@ class PPOTrainer:
 
 
         for i in range(self.n_games):
-            observation, _ = self.env.reset()
+            observation = self.env.reset()
             done = False
             score = 0
             while not done:
-                action, prob, val = self.agent.choose_action(observation)
-                observation_, reward, done, info, _ = self.env.step(action)
+                action, prob, val = self.agent.choose_action(observation.to_vect())
+                observation_, reward, done, info = self.env.step(self.converter.convert_one_hot_encoding_act_to_env_act(self.converter.int_to_onehot(action)))
                 self.n_steps += 1
                 score += reward
-                self.agent.remember(observation, action, prob, val, reward, done)
+                self.agent.remember(observation.to_vect(), action, prob, val, reward, done)
                 if self.n_steps % self.N == 0:
                     self.agent.learn()
                     self.learn_iters += 1
@@ -127,8 +118,8 @@ class PPOTrainer:
             print('episode', i, 'score %.1f' % score, 'avg score %.1f' % self.avg_score,
                     'time_steps', self.n_steps, 'learning_steps', self.learn_iters)
             
-            if self.avg_score >= 200:
-                break
+            #if self.avg_score >= 200:
+            #    break
         total_end_time = time.time()
         self.total_duration = total_end_time - total_start_time
 
