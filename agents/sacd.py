@@ -4,8 +4,41 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
 import numpy as np
+from collections import deque, namedtuple
+import random
 
 
+
+""" Replay - Buffer """
+
+class ReplayBuffer:
+    def __init__(self, buffer_size, batch_size, device):
+        self.device = device
+        self.batch_size = batch_size
+        self.memory = deque(maxlen=buffer_size)
+        self.experience = namedtuple("Experience", field_names=['state', 'action', 'reward', 'next_state', 'done'])
+
+    def add(self, state, action, reward, next_state, done):
+        e = self.experience(state, action, reward, next_state, done)
+        self.memory.append(e)
+
+    def sample(self):
+        experience = random.sample(self.memory, k=self.batch_size)
+
+        states = torch.from_numpy(np.stack([e.state for e in experience if e is not None])).float().to(self.device)
+        actions = torch.from_numpy(np.vstack([e.action for e in experience if e is not None])).float().to(self.device)
+        rewards = torch.from_numpy(np.vstack([e.reward for e in experience if e is not None])).float().to(self.device)
+        next_states = torch.from_numpy(np.stack([e.next_state for e in experience if e is not None])).float().to(self.device)
+        dones = torch.from_numpy(np.vstack([e.done for e in experience if e is not None]).astype(np.uint8)).float().to(self.device)
+
+        return (states, actions, rewards, next_states, dones)
+    
+    def __len__(self):
+        return len(self.memory)
+
+
+
+"""  Actor and Critic Network """
 def hidden_init(layer):
     fan_in = layer.weight.data.size()[0]
     lim = 1. / np.sqrt(fan_in)
@@ -72,5 +105,5 @@ class Critic(nn.Module):
         x = F.relu(self.fcl_3(x))
         return self.fcl_4(x)
     
-    
+
 
