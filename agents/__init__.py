@@ -6,3 +6,4 @@ from .csv_logger import CSVLogger
 from .ppo import PPOAgent, KANPPOAgent
 from .dqn import DQNAgent, KDQNAgent
 from .converter import Converter, Node
+from .evaluator import Evaluator
