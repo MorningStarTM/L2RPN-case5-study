@@ -5,11 +5,12 @@ from itertools import product
 
 
 class Converter:
-    def __init__(self, env):
+    def __init__(self, env, case):
         self.env = env
         self.n_powerlines = self.env.n_line
         self.n_substations = self.env.n_sub
-        self.total_bus_actions = 21
+        self.total_bus_actions = 21 if case=="rte_case5_example" else 56
+        self.n_actions = 132 if self.total_bus_actions==21 else 347
         self.one_hot_encoding_act_conv, self.env_act_dict_list = self.create_one_hot_converter()
 
     def create_one_hot_converter(self):
@@ -67,7 +68,7 @@ class Converter:
         return self.env.action_space(self.env_act_dict_list[one_hot_encoding_act.argmax().item()])
     
     def int_to_onehot(self, n):
-        v = [0] * 132
+        v = [0] * self.n_actions
         v[n] = 1
         return np.array(v)
 

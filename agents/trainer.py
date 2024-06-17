@@ -86,7 +86,7 @@ class PPOTrainer:
         self.learn_iters = 0
         self.avg_score = 0
         self.n_steps = 0
-        self.converter = Converter(self.env)
+        self.converter = Converter(self.env, self.env.name)
         
 
     def train(self, figure_file):

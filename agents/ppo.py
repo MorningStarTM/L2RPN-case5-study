@@ -50,7 +50,7 @@ class KANActorNetwork(nn.Module):
             fc1_dims=256, fc2_dims=512, chkpt_dir='models'):
         super(KANActorNetwork, self).__init__()
 
-        self.checkpoint_file = os.path.join(chkpt_dir, 'kan_actor_ppo')
+        self.checkpoint_file = os.path.join(chkpt_dir, 'kan_actor_ppo_14')
         self.actor = nn.Sequential(
             KANLayer([input_dims, fc1_dims, fc2_dims]),
             KANLayer([fc2_dims, fc1_dims, n_actions]),
@@ -81,7 +81,7 @@ class KANCriticNetwork(nn.Module):
             chkpt_dir='models'):
         super(KANCriticNetwork, self).__init__()
 
-        self.checkpoint_file = os.path.join(chkpt_dir, 'kan_critic_torch_ppo')
+        self.checkpoint_file = os.path.join(chkpt_dir, 'kan_critic_torch_ppo_14')
         self.critic = nn.Sequential(
                 KANLayer([input_dims, fc1_dims, fc2_dims]),
                 KANLayer([fc2_dims, fc1_dims, input_dims]),
@@ -201,10 +201,10 @@ class KANPPOAgent:
 
 class ActorNetwork(nn.Module):
     def __init__(self, n_actions, input_dims, alpha,
-            fc1_dims=256, fc2_dims=512, chkpt_dir='models'):
+            fc1_dims=512, fc2_dims=1024, chkpt_dir='models'):
         super(ActorNetwork, self).__init__()
 
-        self.checkpoint_file = os.path.join(chkpt_dir, 'actor_torch_ppo')
+        self.checkpoint_file = os.path.join(chkpt_dir, 'actor_torch_ppo_14')
         self.actor = nn.Sequential(
                 nn.Linear(input_dims, fc1_dims),
                 nn.ReLU(),
@@ -233,11 +233,11 @@ class ActorNetwork(nn.Module):
 
 
 class CriticNetwork(nn.Module):
-    def __init__(self, input_dims, alpha, fc1_dims=256, fc2_dims=512,
+    def __init__(self, input_dims, alpha, fc1_dims=512, fc2_dims=1024,
             chkpt_dir='models'):
         super(CriticNetwork, self).__init__()
 
-        self.checkpoint_file = os.path.join(chkpt_dir, 'critic_torch_ppo')
+        self.checkpoint_file = os.path.join(chkpt_dir, 'critic_torch_ppo_14')
         self.critic = nn.Sequential(
                 nn.Linear(input_dims, fc1_dims),
                 nn.ReLU(),
