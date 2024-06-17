@@ -12,12 +12,12 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 p = Parameters()
-env_name = "rte_case14_realistic"  # or any other name.
-env = grid2op.make(env_name, action_class=TopologyChangeAction, param=p)
+env_name = "l2rpn_case14_sandbox"  # or any other name.
+env = grid2op.make(env_name+"_train", action_class=TopologyChangeAction, param=p)
 
 
 agent = PPOAgent(n_actions=347, input_dims=env.observation_space.n)
-trainer = PPOTrainer(agent=agent, env=env, N=20, n_epochs=50, n_games=100)
+trainer = PPOTrainer(agent=agent, env=env, N=50, n_epochs=50, n_games=200)
 
 trainer.train("result\\ppo_case14.png")
 #agentt.save_model("models")

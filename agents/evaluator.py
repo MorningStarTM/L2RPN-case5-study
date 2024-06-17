@@ -7,6 +7,7 @@ from .converter import Converter
 from lightsim2grid import LightSimBackend
 from grid2op.Action import TopologyChangeAction
 import grid2op
+from grid2op.Parameters import Parameters
 
 
 
@@ -15,13 +16,14 @@ class Evaluator:
     def __init__(self, env_name:str, agent_name:str):
         self.env_name = env_name
         self.agent_name = agent_name
-        self.n_actions = 132 if self.env_name=="rte_case5_example" else None
-        self.input_dims = 182 if self.env_name == "rte_case5_example" else None
+        self.n_actions = 132 if self.env_name=="rte_case5_example" else 347
+        self.input_dims = 182 if self.env_name == "rte_case5_example" else 467
+        self.p = Parameters()
         
 
     def eval(self):
-        env = grid2op.make(self.env_name, test=True, action_class=TopologyChangeAction)
-        converter = Converter(env)
+        env = grid2op.make(self.env_name+"_val", action_class=TopologyChangeAction, param=self.p)
+        converter = Converter(env, self.env_name)
 
         agent = None
         if self.agent_name == "ppo":
