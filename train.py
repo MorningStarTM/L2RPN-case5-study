@@ -17,7 +17,7 @@ env = grid2op.make(env_name+"_train", action_class=TopologyChangeAction, param=p
 
 
 agent = PPOAgent(n_actions=347, input_dims=env.observation_space.n)
-trainer = PPOTrainer(agent=agent, env=env, N=50, n_epochs=50, n_games=200)
+trainer = PPOTrainer(agent=agent, env=env, N=70, n_epochs=200, n_games=500)
 
 trainer.train("result\\ppo_case14.png")
 #agentt.save_model("models")

@@ -47,7 +47,7 @@ class PPOMemory:
 
 class KANActorNetwork(nn.Module):
     def __init__(self, n_actions, input_dims, alpha,
-            fc1_dims=256, fc2_dims=512, chkpt_dir='models'):
+            fc1_dims=512, fc2_dims=1024, chkpt_dir='models'):
         super(KANActorNetwork, self).__init__()
 
         self.checkpoint_file = os.path.join(chkpt_dir, 'kan_actor_ppo_14')
@@ -77,15 +77,14 @@ class KANActorNetwork(nn.Module):
 
 
 class KANCriticNetwork(nn.Module):
-    def __init__(self, input_dims, alpha, fc1_dims=256, fc2_dims=512,
+    def __init__(self, input_dims, alpha, fc1_dims=512, fc2_dims=256,
             chkpt_dir='models'):
         super(KANCriticNetwork, self).__init__()
 
         self.checkpoint_file = os.path.join(chkpt_dir, 'kan_critic_torch_ppo_14')
         self.critic = nn.Sequential(
                 KANLayer([input_dims, fc1_dims, fc2_dims]),
-                KANLayer([fc2_dims, fc1_dims, input_dims]),
-                KANLayer([input_dims, 8, 1]),
+                KANLayer([fc2_dims, 64, 1]),
         )
 
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)
@@ -131,6 +130,7 @@ class KANPPOAgent:
         print('... loading models ...')
         self.actor.load_checkpoint()
         self.critic.load_checkpoint()
+        print("Model Loaded")
 
     def choose_action(self, observation):
         state = torch.tensor([observation], dtype=torch.float).to(self.actor.device)
