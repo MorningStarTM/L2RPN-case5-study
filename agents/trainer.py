@@ -137,9 +137,10 @@ class QTrainer:
         self.env = env
         self.n_episode = n_episode
         self.best_score = 0
+        self.converter = Converter(self.env, case="rte_case5_example")
 
 
-    def train(self, filename):
+    def train(self, filename, model_path):
         scores, eps_history = [], []
         total_start_time = time.time()
 
@@ -147,13 +148,13 @@ class QTrainer:
 
             score = 0
             done = False
-            observation,_ = self.env.reset()
+            observation = self.env.reset()
             while not done:
-                action = self.agent.choose_action(observation)
-                observation_, reward, done, info, _ = self.env.step(action)
+                action = self.agent.choose_action(observation.to_vect())
+                observation_, reward, done, info = self.env.step(self.converter.convert_one_hot_encoding_act_to_env_act(self.converter.int_to_onehot(action)))
                 score += reward
-                self.agent.store_transition(observation, action, reward, 
-                                        observation_, done)
+                self.agent.store_transition(observation.to_vect(), action, reward, 
+                                        observation_.to_vect(), done)
                 self.agent.learn()
                 observation = observation_
             scores.append(score)
@@ -162,7 +163,7 @@ class QTrainer:
             avg_score = np.mean(scores[-100:])
             if self.best_score < score:
                 self.best_score = score
-                self.agent.save_model("models\\dqn.pth")
+                self.agent.save_model(f"models\\{model_path}.pth")
 
             print('episode ', i, 'score %.2f' % score,
                     'average score %.2f' % avg_score,
@@ -176,5 +177,4 @@ class QTrainer:
         self.csvlogger.log()
 
         x = [i+1 for i in range(self.n_episode)]
-        filename = 'lunar_lander.png'
         plotLearning(x, scores, eps_history, filename)
