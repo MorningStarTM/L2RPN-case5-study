@@ -94,10 +94,11 @@ class DQNAgent:
         self.mem_cntr = 0
         self.iter_cntr = 0
         self.replace_target = 100
+        self.name = "DQN"
 
         self.Q_eval = QNetwork(lr, n_actions=n_actions,
                                    input_dims=input_dims,
-                                   fc1_dims=16, fc2_dims=32)
+                                   fc1_dims=256, fc2_dims=512)
         self.state_memory = np.zeros((self.mem_size, input_dims),
                                      dtype=np.float32)
         self.new_state_memory = np.zeros((self.mem_size, input_dims),
@@ -221,7 +222,7 @@ class KDQNAgent:
 
         self.Q_eval = KQNetwork(lr, n_actions=n_actions,
                                    input_dims=input_dims,
-                                   fc1_dims=16, fc2_dims=32)
+                                   fc1_dims=256, fc2_dims=512)
         
         self.state_memory = np.zeros((self.mem_size, input_dims),
                                      dtype=np.float32)
