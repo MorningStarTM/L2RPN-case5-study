@@ -132,7 +132,7 @@ class PPOTrainer:
 
 
 class QTrainer:
-    def __init__(self, agent, env, n_episode=1000):
+    def __init__(self, agent, env, n_episode):
         self.agent = agent
         self.env = env
         self.n_episode = n_episode
@@ -170,7 +170,7 @@ class QTrainer:
                     break
             self.scores_window.append(score)
             self.scores.append(score) 
-            eps_history.append(self.agent.epsilon)
+            #eps_history.append(self.agent.epsilon)
 
             eps = max(self.eps_end, self.eps_decay * self.eps)
 
@@ -185,7 +185,7 @@ class QTrainer:
             avg_score = np.mean(self.scores_window)
             if avg_score > self.best_score:
                 self.best_score = avg_score
-                self.save_model(model_path)
+                self.agent.save_model(model_path)
                 print(f"\nEpisode {i}\tNew best average score: {self.best_score:.2f} - Model saved!")
             
         total_end_time = time.time()
@@ -196,4 +196,4 @@ class QTrainer:
         self.csvlogger.log()
 
         x = [i+1 for i in range(self.n_episode)]
-        plotLearning(x, scores, filename)
+        plotLearning(x, self.scores, filename)

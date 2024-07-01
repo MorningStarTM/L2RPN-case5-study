@@ -60,8 +60,9 @@ def plotLearning(x, scores, filename, window=100):
     ax.plot(x, scores, label='Scores', color='blue')
 
     # Calculate and plot running average of scores
-    running_avg = np.convolve(scores, np.ones(window)/window, mode='valid')
-    ax.plot(x[:len(running_avg)], running_avg, label=f'Running Average (window={window})', color='red')
+    if len(scores) >= window:
+        running_avg = np.convolve(scores, np.ones(window)/window, mode='valid')
+        ax.plot(x[:len(running_avg)], running_avg, label=f'Running Average (window={window})', color='red')
 
     # Labels and legends
     ax.set_xlabel('Episodes')
