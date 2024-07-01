@@ -44,33 +44,32 @@ def plot_learning_curve(x, scores, figure_file):
 
 
 
-def plotLearning(x, scores, epsilons, filename, lines=None):
-    fig = plt.figure(figsize=(10, 5))
-    ax = fig.add_subplot(111, label="1")
-    ax2 = fig.add_subplot(111, label="2", frame_on=False)
+def plotLearning(x, scores, filename, window=100):
+    """
+    Plots the scores and the running average of the scores.
 
-    ax.plot(x, epsilons, color="C0")
-    ax.set_xlabel("Episode", color="C0")
-    ax.set_ylabel("Epsilon", color="C0")
-    ax.tick_params(axis='x', colors="C0")
-    ax.tick_params(axis='y', colors="C0")
+    Args:
+        x (list): The episode numbers.
+        scores (list): The scores achieved in each episode.
+        filename (str): The filename to save the plot as.
+        window (int): The window size for calculating the running average.
+    """
+    fig, ax = plt.subplots(figsize=(12, 8))
 
-    N = len(scores)
-    running_avg = np.empty(N)
-    for t in range(N):
-        running_avg[t] = np.mean(scores[max(0, t-20):(t+1)])
+    # Plot scores
+    ax.plot(x, scores, label='Scores', color='blue')
 
-    ax2.plot(x, running_avg, color="C1")  # Changed from scatter to plot
-    ax2.yaxis.tick_right()
-    ax2.set_ylabel('Score', color="C1")
-    ax2.yaxis.set_label_position('right')
-    ax2.tick_params(axis='y', colors="C1")
+    # Calculate and plot running average of scores
+    running_avg = np.convolve(scores, np.ones(window)/window, mode='valid')
+    ax.plot(x[:len(running_avg)], running_avg, label=f'Running Average (window={window})', color='red')
 
-    if lines is not None:
-        for line in lines:
-            plt.axvline(x=line)
+    # Labels and legends
+    ax.set_xlabel('Episodes')
+    ax.set_ylabel('Scores', color='blue')
+    ax.tick_params(axis='y', colors='blue')
+    ax.legend(loc='upper left')
 
+    # Save plot
+    plt.title('Training Progress')
     plt.savefig(filename)
-    plt.show()
-
-
+    plt.close()

@@ -170,6 +170,7 @@ class QTrainer:
                     break
             self.scores_window.append(score)
             self.scores.append(score) 
+            eps_history.append(self.agent.epsilon)
 
             eps = max(self.eps_end, self.eps_decay * self.eps)
 
@@ -195,4 +196,4 @@ class QTrainer:
         self.csvlogger.log()
 
         x = [i+1 for i in range(self.n_episode)]
-        #plotLearning(x, scores, eps_history, filename)
+        plotLearning(x, scores, filename)
