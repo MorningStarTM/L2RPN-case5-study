@@ -138,6 +138,13 @@ class QTrainer:
         self.n_episode = n_episode
         self.best_score = 0
         self.converter = Converter(self.env, case="rte_case5_example")
+        self.scores = []
+        self.scores_window = deque(maxlen=100)
+        self.eps = 1.0
+        self.eps_start=1.0
+        self.eps_end=0.01
+        self.eps_decay=0.995
+        self.target_update=10
 
 
     def train(self, filename, model_path):
@@ -149,25 +156,36 @@ class QTrainer:
             score = 0
             done = False
             observation = self.env.reset()
+
             while not done:
-                action = self.agent.choose_action(observation.to_vect())
+                action = self.agent.act(observation.to_vect())
                 observation_, reward, done, info = self.env.step(self.converter.convert_one_hot_encoding_act_to_env_act(self.converter.int_to_onehot(action)))
                 score += reward
-                self.agent.store_transition(observation.to_vect(), action, reward, 
+                self.agent.step(observation.to_vect(), action, reward, 
                                         observation_.to_vect(), done)
-                self.agent.learn()
+
                 observation = observation_
-            scores.append(score)
-            eps_history.append(self.agent.epsilon)
 
-            avg_score = np.mean(scores[-100:])
-            if self.best_score < score:
-                self.best_score = score
-                self.agent.save_model(f"models\\{model_path}.pth")
+                if done:
+                    break
+            self.scores_window.append(score)
+            self.scores.append(score) 
 
-            print('episode ', i, 'score %.2f' % score,
-                    'average score %.2f' % avg_score,
-                    'epsilon %.2f' % self.agent.epsilon)
+            eps = max(self.eps_end, self.eps_decay * self.eps)
+
+            print(f"\rEpisode {i}\tAverage Score: {np.mean(self.scores_window):.2f}", end="")
+
+            if i % self.target_update == 0:
+                self.agent.update_target_network()
+            
+            if i % 100 == 0:
+                print('\rEpisode {}\tAverage Score: {:.2f}'.format(i, np.mean(self.scores_window)))
+
+            avg_score = np.mean(self.scores_window)
+            if avg_score > self.best_score:
+                self.best_score = avg_score
+                self.save_model(model_path)
+                print(f"\nEpisode {i}\tNew best average score: {self.best_score:.2f} - Model saved!")
             
         total_end_time = time.time()
         self.total_duration = total_end_time - total_start_time
@@ -177,4 +195,4 @@ class QTrainer:
         self.csvlogger.log()
 
         x = [i+1 for i in range(self.n_episode)]
-        plotLearning(x, scores, eps_history, filename)
+        #plotLearning(x, scores, eps_history, filename)
