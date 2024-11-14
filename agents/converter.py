@@ -35,7 +35,7 @@ class ActionConverter:
             self.sub_mask.extend(range(self.sub_to_topo_begin[sub], self.sub_to_topo_end[sub])) # Extends the sub_mask list with indices corresponding to the topologies of the current substation.
         
         self.sub_pos = self.n_sub_actions.cumsum() 
-        self.n = sum(self.n_sub_actions)
+        self.n = len(self.actions)
 
     def act(self, action:int):
         return self.actions[action]
