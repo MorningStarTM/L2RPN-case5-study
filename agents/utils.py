@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import itertools
+import sys
 
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
@@ -74,3 +75,21 @@ def plotLearning(x, scores, filename, window=100):
     plt.title('Training Progress')
     plt.savefig(filename)
     plt.close()
+
+
+
+
+def print_progress_bar(iteration, total, length=50):
+    """
+    Prints a progress bar with `#` symbols.
+    
+    Args:
+    - iteration: Current iteration (int)
+    - total: Total iterations (int)
+    - length: Character length of bar (default is 50)
+    """
+    percent = ("{0:.1f}").format(100 * (iteration / float(total)))
+    filled_length = int(length * iteration // total)
+    bar = '#' * filled_length + '-' * (length - filled_length)
+    sys.stdout.write(f'\r|{bar}| {percent}% Complete')
+    sys.stdout.flush()
