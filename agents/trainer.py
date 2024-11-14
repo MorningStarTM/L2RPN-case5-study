@@ -1,11 +1,14 @@
-from .utils import plot_learning, plot_learning_curve, plotLearning
+from .utils import plot_learning, plot_learning_curve, plotLearning, print_progress_bar
 import matplotlib.pyplot as plt
 import time
 import numpy as np
 from .csv_logger import CSVLogger
 from collections import deque
 import grid2op
-from .converter import Converter
+from .converter import Converter, ActionConverter
+from .ppo import PPOAgent
+from grid2op import Environment
+from grid2op.Exceptions import *
 
 
 import os
@@ -74,8 +77,8 @@ class Trainer:
     
 
 class PPOTrainer:
-    def __init__(self, agent, env, N, n_games, n_epochs):
-        self.agent = agent
+    def __init__(self, env:Environment, N, n_games, n_epochs):
+        
         self.env = env
         self.n_games = n_games
         self.N = N
@@ -86,7 +89,10 @@ class PPOTrainer:
         self.learn_iters = 0
         self.avg_score = 0
         self.n_steps = 0
-        self.converter = Converter(self.env, self.env.name)
+        #self.converter = Converter(self.env, self.env.name)
+        self.converter = ActionConverter(env=self.env)
+        self.n_actions = self.converter.n
+        self.agent = PPOAgent(actor='sparse', n_actions=self.n_actions, input_dims=self.env.observation_space.size())
         
 
     def train(self, figure_file):
@@ -99,7 +105,7 @@ class PPOTrainer:
             score = 0
             while not done:
                 action, prob, val = self.agent.choose_action(observation.to_vect())
-                observation_, reward, done, info = self.env.step(self.converter.convert_one_hot_encoding_act_to_env_act(self.converter.int_to_onehot(action)))
+                observation_, reward, done, info = self.env.step(self.converter.actions[action])
                 self.n_steps += 1
                 score += reward
                 self.agent.remember(observation.to_vect(), action, prob, val, reward, done)
@@ -127,8 +133,82 @@ class PPOTrainer:
         self.csvlogger = CSVLogger(agent=self.agent, epochs=self.n_epochs, c_point=i, time=self.total_duration)
         self.csvlogger.log()
 
+        #self.agent.save_models()
+
         x = [i+1 for i in range(len(self.score_history))]
         plot_learning_curve(x, self.score_history, figure_file)
+
+    
+
+    def train_episode(self, figure_file):
+        total_start_time = time.time()
+        num_episodes = len(self.env.chronics_handler.subpaths)
+        score = 0
+
+        for episode_id in range(num_episodes):
+
+            #print(f"Episode ID : {episode_id}")
+            self.env.set_id(episode_id)
+            obs = self.env.reset()
+            reward = self.env.reward_range[0]
+            done = False
+            
+
+            for i in range (self.env.max_episode_duration()):
+                #print(i)
+                print_progress_bar(i, self.env.max_episode_duration(), episode=episode_id)
+                time.sleep(0.05)  # Simulate some work
+
+                try:
+                    action, prob, val = self.agent.choose_action(obs.to_vect())
+                    obs_, reward, done, info = self.env.step(self.converter.actions[action])
+                    self.n_steps += 1
+                    score += reward
+                    self.agent.remember(obs.to_vect(), action, prob, val, reward, done)
+                    if i % self.N == 0:
+                        self.agent.learn()
+                        self.learn_iters += 1
+                    obs = obs_
+
+                    if done:
+                        self.env.set_id(episode_id)
+                        
+                        obs = self.env.reset()
+
+                        self.env.fast_forward_chronics(i - 1)
+                        
+                        action, prob, val = self.agent.choose_action(obs.to_vect())
+                        obs_, reward, done, _ = self.env.step(self.converter.actions[action])
+
+                        obs = obs_
+                    
+                    self.score_history.append(score)
+                    self.avg_score = np.mean(self.score_history[-100:])
+
+                    if self.avg_score > self.best_score:
+                        self.best_score = self.avg_score
+                        self.agent.save_models()
+
+            
+
+                except NoForecastAvailable as e:
+                    #print(f"Grid2OpException encountered at step {i} in episode {episode_id}: {e}")
+                    self.env.set_id(episode_id)
+                    obs = self.env.reset()
+                    self.env.fast_forward_chronics(i-1)
+                    continue
+
+                except Grid2OpException as e:
+                    #print(f"Grid2OpException encountered at step {i} in episode {episode_id}: {e}")
+                    self.env.set_id(episode_id)
+                    obs = self.env.reset()
+                    self.env.fast_forward_chronics(i-1)
+                    continue
+
+        
+        x = [i+1 for i in range(len(self.score_history))]
+        plot_learning_curve(x, self.score_history, figure_file)
+
 
 
 class QTrainer:
