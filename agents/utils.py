@@ -79,17 +79,20 @@ def plotLearning(x, scores, filename, window=100):
 
 
 
-def print_progress_bar(iteration, total, length=50):
+def print_progress_bar(iteration, total, length=50, episode=1):
     """
-    Prints a progress bar with `#` symbols.
+    Prints a progress bar with `#` symbols for each episode on a new line.
     
     Args:
     - iteration: Current iteration (int)
     - total: Total iterations (int)
     - length: Character length of bar (default is 50)
+    - episode: Episode number (default is 1)
     """
     percent = ("{0:.1f}").format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)
     bar = '#' * filled_length + '-' * (length - filled_length)
-    sys.stdout.write(f'\r|{bar}| {percent}% Complete')
+    sys.stdout.write(f'\rEpisode {episode}: |{bar}| {percent}% Complete')
     sys.stdout.flush()
+    if iteration == total:
+        print()  # Move to the next line after completing the bar
