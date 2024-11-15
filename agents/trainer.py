@@ -9,10 +9,20 @@ from .converter import Converter, ActionConverter
 from .ppo import PPOAgent
 from grid2op import Environment
 from grid2op.Exceptions import *
-
+import logging
 
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
+
+# Set up the logger
+logging.basicConfig(
+    filename="agents\\logger\\training_log.log",  # Log file name
+    filemode="a",                 # Append mode
+    format="%(asctime)s - %(levelname)s - %(message)s",  # Log format
+    level=logging.INFO             # Log level
+)
+logger = logging.getLogger()
 
 
 class Trainer:
@@ -141,21 +151,20 @@ class PPOTrainer:
     
 
     def train_episode(self, figure_file):
-        total_start_time = time.time()
         num_episodes = len(self.env.chronics_handler.subpaths)
         score = 0
 
-        for episode_id in range(num_episodes):
+        for episode_id in range(num_episodes-100):
 
-            #print(f"Episode ID : {episode_id}")
             self.env.set_id(episode_id)
             obs = self.env.reset()
             reward = self.env.reward_range[0]
             done = False
             
+            logger.info(f"Starting episode {episode_id}")
+
 
             for i in range (self.env.max_episode_duration()):
-                #print(i)
                 print_progress_bar(i, self.env.max_episode_duration(), episode=episode_id)
                 time.sleep(0.05)  # Simulate some work
 
@@ -188,18 +197,20 @@ class PPOTrainer:
                     if self.avg_score > self.best_score:
                         self.best_score = self.avg_score
                         self.agent.save_models()
+                        logger.info(f"New best score: {self.best_score} achieved in episode {episode_id}")
+
 
             
 
                 except NoForecastAvailable as e:
-                    #print(f"Grid2OpException encountered at step {i} in episode {episode_id}: {e}")
+                    logger.error(f"Grid2OpException encountered at step {i} in episode {episode_id}: {e}")
                     self.env.set_id(episode_id)
                     obs = self.env.reset()
                     self.env.fast_forward_chronics(i-1)
                     continue
 
                 except Grid2OpException as e:
-                    #print(f"Grid2OpException encountered at step {i} in episode {episode_id}: {e}")
+                    logger.error(f"Grid2OpException encountered at step {i} in episode {episode_id}: {e}")
                     self.env.set_id(episode_id)
                     obs = self.env.reset()
                     self.env.fast_forward_chronics(i-1)
@@ -208,6 +219,42 @@ class PPOTrainer:
         
         x = [i+1 for i in range(len(self.score_history))]
         plot_learning_curve(x, self.score_history, figure_file)
+        logger.info("Training completed and learning curve plotted.")
+
+
+    def evaluate(self):
+        logger.info("----------------------------------------------------------------------   Evaluation   ------------------------------------------------------------------------------------")
+        self.agent.load_models()
+        num_episodes = len(self.env.chronics_handler.subpaths)
+        
+        episode_duration = []
+
+        for episode_id in range(num_episodes-100, num_episodes):
+
+            self.env.set_id(episode_id)
+            obs = self.env.reset()
+            reward = self.env.reward_range[0]
+            done = False
+            score = 0
+            
+            
+            logger.info(f"Starting episode {episode_id} for evaluation")
+
+            for i in range (self.env.max_episode_duration()):
+                action, prob, val = self.agent.choose_action(obs.to_vect())
+                obs_, reward, done, info = self.env.step(self.converter.actions[action])
+                score += reward
+
+                obs = obs_
+
+                if done:
+                    episode_duration.append([i, score])
+                    break
+
+        
+        return episode_duration
+
+
 
 
 
